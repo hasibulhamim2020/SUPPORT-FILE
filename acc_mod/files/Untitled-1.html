@@ -1,0 +1,193 @@
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+  <tr>
+    <td><table width="100%" border="0" cellspacing="0" cellpadding="0">
+  
+  <tr>
+	<td bgcolor="#333333"><span class="style3 style1">S/L</span></td>
+	<td bgcolor="#333333"><span class="style3 style1">DEALER NAME </span></td>
+	<td colspan="4" bgcolor="#333333"><div align="center" class="style1"><span class="style3">SALES</span></div></td>
+	<td bgcolor="#333333"><div align="center" class="style1"><strong><span class="style5">Total</span></strong></div></td>
+	<td colspan="4" bgcolor="#333333"><div align="center" class="style1"><span class="style3">DAMAGE</span></div></td>
+	<td bgcolor="#333333"><div align="center" class="style1"><strong><span class="style5">Total</span></strong></div></td>
+	<td colspan="4" bgcolor="#333333"><div align="center" class="style1"><span class="style3">SALES/DAMAGE RATIO</span></div></td>
+  </tr>
+	<tr>
+		<td bgcolor="#333333">&nbsp;</td>
+		<td bgcolor="#333333">&nbsp;</td>
+		<td bgcolor="#0099CC"><div align="center"><strong>A</strong></div></td>
+		<td bgcolor="#0099CC"><div align="center"><strong>B</strong></div></td>
+		<td bgcolor="#0099CC"><div align="center"><strong>C</strong></div></td>
+		<td bgcolor="#0099CC"><div align="center"><strong>M</strong></div></td>
+		<td bgcolor="#333333">&nbsp;</td>
+		<td bgcolor="#0099CC"><div align="center"><strong>A</strong></div></td>
+		<td bgcolor="#0099CC"><div align="center"><strong>B</strong></div></td>
+		<td bgcolor="#0099CC"><div align="center"><strong>C</strong></div></td>
+		<td bgcolor="#0099CC"><div align="center"><strong>M</strong></div></td>
+		<td bgcolor="#333333">&nbsp;</td>
+		<td bgcolor="#0099CC"><div align="center"><strong>A</strong></div></td>
+		<td bgcolor="#0099CC"><div align="center"><strong>B</strong></div></td>
+		<td bgcolor="#0099CC"><div align="center"><strong>C</strong></div></td>
+		<td bgcolor="#0099CC"><div align="center"><strong>M</strong></div></td>
+	</tr>
+<?
+if(isset($item_id)) {$con=' and c.item_id="'.$item_id.'"';}
+if(isset($dealer_type)) {$dcon=' and d.dealer_type="'.$dealer_type.'"';}
+$sql = "select d.dealer_code,d.dealer_name_e as dealer_name from dealer_info d where 1 ".$dcon." order by dealer_name_e";
+
+$query = @db_query($sql);
+while($dealer=@mysqli_fetch_object($query)){
+
+$dealer_code = $dealer->dealer_code;
+
+
+$sqql = "select sum(c.total_amt) from sale_do_chalan c,dealer_info d where c.chalan_date between '".$f_date."' and '".$t_date."' and c.dealer_code=d.dealer_code and   d.dealer_code='".$dealer_code."'".$con;
+${'sqlmona'} = mysqli_fetch_row(db_query($sqql));
+
+$sqql = "select sum(c.total_amt) from sale_do_chalan c,dealer_info d where c.chalan_date between '".$f_date."' and '".$t_date."' and c.dealer_code=d.dealer_code and   d.dealer_code='".$dealer_code."'".$con;
+${'sqlmonb'} = mysqli_fetch_row(db_query($sqql));
+
+$sqql = "select sum(c.total_amt) from sale_do_chalan c,dealer_info d where c.chalan_date between '".$f_date."' and '".$t_date."' and c.dealer_code=d.dealer_code and   d.dealer_code='".$dealer_code."'".$con;
+${'sqlmonc'} = mysqli_fetch_row(db_query($sqql));
+
+$sqql = "select sum(c.total_amt) from sale_do_chalan c,dealer_info d where c.chalan_date between '".$f_date."' and '".$t_date."' and c.dealer_code=d.dealer_code and   d.dealer_code='".$dealer_code."'".$con;
+${'sqlmonm'} = mysqli_fetch_row(db_query($sqql));
+
+
+${'totala'} = ${'totala'} + ${'sqlmona'}[0];
+${'totalb'} = ${'totalb'} + ${'sqlmonb'}[0];
+${'totalc'} = ${'totalc'} + ${'sqlmonc'}[0];
+${'totalm'} = ${'totalm'} + ${'sqlmonm'}[0];
+
+${'total'} = ${'sqlmona'}[0] + ${'sqlmonb'}[0] + ${'sqlmonc'}[0] + ${'sqlmonm'}[0];
+
+${'totalall'} = ${'totalall'} + ${'total'};
+${'totalr'.$dealer_code} = ${'totalr'.$dealer_code} + ${'total'};
+
+$sqql = "select sum(c.amount) from warehouse_damage_receive_detail c,dealer_info d,damage_cause dc where dc.payable='Yes' and dc.id=c.receive_type and c.or_date between '".$f_date."' and '".$t_date."' and c.vendor_id=d.dealer_code and   d.dealer_code='".$dealer_code."'".$con;
+${'dsqlmona'} = mysqli_fetch_row(db_query($sqql));
+
+$sqql = "select sum(c.amount) from warehouse_damage_receive_detail c,dealer_info d,damage_cause dc where dc.payable='Yes' and dc.id=c.receive_type and c.or_date between '".$f_date."' and '".$t_date."' and c.vendor_id=d.dealer_code and   d.dealer_code='".$dealer_code."'".$con;
+${'dsqlmonb'} = mysqli_fetch_row(db_query($sqql));
+
+$sqql = "select sum(c.amount) from warehouse_damage_receive_detail c,dealer_info d,damage_cause dc where dc.payable='Yes' and dc.id=c.receive_type and c.or_date between '".$f_date."' and '".$t_date."' and c.vendor_id=d.dealer_code and   d.dealer_code='".$dealer_code."'".$con;
+${'dsqlmonc'} = mysqli_fetch_row(db_query($sqql));
+
+echo $sqql = "select sum(c.amount) from warehouse_damage_receive_detail c,dealer_info d,damage_cause dc where dc.payable='Yes' and dc.id=c.receive_type and c.or_date between '".$f_date."' and '".$t_date."' and c.vendor_id=d.dealer_code and   d.dealer_code='".$dealer_code."'".$con;
+${'dsqlmonm'} = mysqli_fetch_row(db_query($sqql));
+
+
+${'dtotala'} = ${'dtotala'} + ${'dsqlmona'}[0];
+${'dtotalb'} = ${'dtotalb'} + ${'dsqlmonb'}[0];
+${'dtotalc'} = ${'dtotalc'} + ${'dsqlmonc'}[0];
+${'dtotalm'} = ${'dtotalm'} + ${'dsqlmonm'}[0];
+
+${'dtotal'} = ${'dsqlmona'}[0] + ${'dsqlmonb'}[0] + ${'dsqlmonc'}[0] + ${'dsqlmonm'}[0];
+
+${'dtotalall'} = ${'dtotalall'} + ${'dtotal'};
+${'dtotalr'.$dealer_code} = ${'dtotalr'.$dealer_code} + ${'dtotal'};
+?>
+  
+  <tr bgcolor="#<? echo (($i%2)==0)?'fff':'EBEBEB';?>">
+    <td><?=++$j?></td>
+    <td><a target="_blank"  href=""><?=$dealer_code.'-'.$dealer->dealer_name?></a></td>
+
+<td bgcolor="#99CCFF"><div align="right">
+  <?=number_format(${'sqlmona'}[0],2);?>
+</div></td>
+<td bgcolor="#99CCFF"><div align="right">
+  <?=number_format(${'sqlmonb'}[0],2);?>
+</div></td>
+<td bgcolor="#99CCFF"><div align="right">
+  <?=number_format(${'sqlmonc'}[0],2);?>
+</div></td>
+<td bgcolor="#99CCFF"><div align="right">
+  <?=number_format(${'sqlmonm'}[0],2);?>
+</div></td>
+<td bgcolor="#FFFF99"><div align="right"><strong>
+  <? $totalallr= $totalallr + ${'totalr'.$dealer_code};echo number_format(${'totalr'.$dealer_code},2)?>
+</strong></div></td>
+<td bgcolor="#99CCFF"><div align="right">
+  <?=number_format(${'dsqlmona'}[0],2);?>
+</div></td>
+<td bgcolor="#99CCFF"><div align="right">
+  <?=number_format(${'dsqlmonb'}[0],2);?>
+</div></td>
+<td bgcolor="#99CCFF"><div align="right">
+  <?=number_format(${'dsqlmonc'}[0],2);?>
+</div></td>
+<td bgcolor="#99CCFF"><div align="right">
+  <?=number_format(${'dsqlmonm'}[0],2);?>
+</div></td>
+<td bgcolor="#FFFF99"><div align="right"><strong>
+  <? $dtotalallr= $dtotalallr + ${'dtotalr'.$dealer_code};echo number_format(${'dtotalr'.$dealer_code},2)?>
+</strong></div></td>
+<td bgcolor="#99CCFF"><div align="right">
+  <?=number_format(@((${'dsqlmona'}[0]/${'sqlmona'}[0])*100),2);?>%
+</div></td>
+<td bgcolor="#99CCFF"><div align="right">
+  <?=number_format(@((${'dsqlmonb'}[0]/${'sqlmonb'}[0])*100),2);?>
+  %</div></td>
+<td bgcolor="#99CCFF"><div align="right">
+  <?=number_format(@((${'dsqlmonc'}[0]/${'sqlmonc'}[0])*100),2);?>
+  %</div></td>
+<td bgcolor="#99CCFF"><div align="right">
+  <?=number_format(@((${'dsqlmonm'}[0]/${'sqlmonm'}[0])*100),2);?>
+  %</div></td>
+  </tr>
+  <? }
+
+
+
+  ?>
+    <tr bgcolor="#<? echo (($i%2)==0)?'fff':'EBEBEB';?>">
+      <td colspan="2"><strong>Total</strong></td>
+      <td bgcolor="#FFFF66"><div align="right">
+  <?=number_format((${'totala'}),2);?>
+</div></td>
+<td bgcolor="#FFFF66"><div align="right">
+  <?=number_format((${'totalb'}),2);?>
+</div></td>
+<td bgcolor="#FFFF66"><div align="right"> <?=number_format((${'totalc'}),2);?>
+</div></td>
+<td bgcolor="#FFFF66"><div align="right"> <?=number_format((${'totalm'}),2);?>
+</div></td>
+<td bgcolor="#FFFF99"><div align="right">
+  <?=number_format($totalall,2);?>
+</div></td>
+<td bgcolor="#FFFF66"><div align="right">
+  <?=number_format(${'dtotala'},2);?>
+</div></td>
+<td bgcolor="#FFFF66"><div align="right">
+  <?=number_format(${'dtotalb'},2);?>
+</div></td>
+<td bgcolor="#FFFF66"><div align="right">
+  <?=number_format(${'dtotalc'},2);?>
+</div></td>
+<td bgcolor="#FFFF66"><div align="right">
+  <?=number_format(${'dtotalm'},2);?>
+</div></td>
+<td bgcolor="#FFFF99"><div align="right">
+  <?=number_format($dtotalall,2);?>
+</div></td>
+<td bgcolor="#FFFF66"><div align="right">
+  <?=@number_format(${'dtotala'}*100/${'totala'},2);?>
+  %</div></td>
+<td bgcolor="#FFFF66"><div align="right">
+  <?=@number_format(${'dtotalb'}*100/${'totalb'},2);?>
+  %</div></td>
+<td bgcolor="#FFFF66"><div align="right">
+  <?=@number_format(${'dtotalc'}*100/${'totalc'},2);?>
+  %</div></td>
+<td bgcolor="#FFFF66"><div align="right">
+  <?=@number_format(${'dtotalm'}/${'totalm'},2);?>
+  %</div></td>
+    </tr>
+   
+
+</table></td>
+</tr>
+  <tr>
+    <td>&nbsp;</td>
+  </tr>
+
+</table>

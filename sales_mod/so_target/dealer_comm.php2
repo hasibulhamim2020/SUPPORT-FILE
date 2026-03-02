@@ -1,0 +1,273 @@
+<?php
+
+ini_set('max_execution_time', 600);
+ini_set('max_input_vars', 10000);
+ini_set('memory_limit', '256M');
+
+require_once "../../../assets/template/layout.top.php";
+
+$head='<link href="../../css/report_selection.css" type="text/css" rel="stylesheet"/>';
+
+
+$title='Dealer Commission Calculation';
+$table='z_dealer_commission';
+$unique='id';
+
+
+
+if(isset($_POST['upload'])){
+    
+$fdate		= $_POST['fdate'];
+$tdate		= $_POST['tdate'];
+
+
+$filename=$_FILES["upload_file"]["tmp_name"];
+	if($_FILES["upload_file"]["tmp_name"]!=""){	
+
+	$file = fopen($filename, "r");
+
+// Delete all old data
+$sql_del = "DELETE FROM z_dealer_old_stock WHERE 1 ";
+db_query($sql_del);
+
+		
+while (($emapData = fgetcsv($file, 10000, ",")) !== FALSE){
+    if($emapData[1]>0){	
+
+            $sql = "INSERT INTO z_dealer_old_stock (dealer_code,item_id,old_stock,fdate,tdate,entry_at) VALUES
+    			('".$emapData[1]."','".$emapData[2]."','".$emapData[3]."','".$fdate."','".$tdate."','".date('Y-m-d H:i:s')."')";
+    			
+            db_query($sql); 
+    }	
+
+    
+} // end while
+fclose($file);} // end file upload if
+
+echo "<h2>Upload Complete</h2>";
+} // end submit button
+
+
+
+
+if(isset($_POST['process'])){
+    
+$now  = date('Y-m-d H:i:s');
+
+// old data delete
+$sql_del = "DELETE FROM z_dealer_commission WHERE 1 ";
+db_query($sql_del);
+
+
+// item info
+$sql_i="select item_id,nsp_per,t_price from item_info where sub_group_id='100100000'";
+$query_i=db_query($sql_i);
+while($data4=mysqli_fetch_object($query_i)){
+    $item_nsp[$data4->item_id]=$data4->nsp_per;
+    $item_tp[$data4->item_id]=$data4->t_price;
+}
+
+// Dealer_old_stock_list
+$sql="select * from z_dealer_old_stock where 1 ";
+$q2=db_query($sql);
+while($data=mysqli_fetch_object($q2)){
+
+$fdate = $data->fdate;
+$tdate = $data->tdate;
+
+$stock_non_offer = $stock_qty = $data->old_stock; // 1000
+$stock_offer=$comm_amt='';
+
+// dealer item do list and 2nd sales list.
+$sql3="SELECT chalan_date AS date, item_id, SUM(do_qty) AS do_qty, SUM(sales_qty) AS sales_qty
+FROM (
+    SELECT chalan_date, item_id, total_unit AS do_qty, 0 AS sales_qty
+    FROM sale_do_chalan
+    WHERE chalan_date BETWEEN '".$fdate."' AND '".$tdate."' AND dealer_code = $data->dealer_code AND item_id = $data->item_id
+    UNION ALL
+    SELECT chalan_date, item_id, 0 AS do_qty, total_unit AS sales_qty
+    FROM ss_do_chalan
+    WHERE chalan_date BETWEEN '".$fdate."' AND '".$tdate."' AND item_id = $data->item_id and depot_id=$data->dealer_code
+) AS combined_data
+GROUP BY date, item_id
+ORDER BY date, item_id";
+$query=db_query($sql3);
+while($data2=mysqli_fetch_object($query)){
+
+$do_qty     = $data2->do_qty;
+$sec_qty    = $data2->sales_qty;
+
+//echo '<br>old_offer_qty = '.
+$old_stock_offer=$stock_offer;
+if(($stock_offer+$do_qty)>$sec_qty){ $stock_offer= $stock_offer+$do_qty-$sec_qty;}else{ $stock_offer=0;} //echo '<br>offer_qty= '.$stock_offer;
+
+if(($old_stock_offer+$do_qty)>$sec_qty){ $stock_non_offer = $stock_non_offer;}else{$stock_non_offer=($stock_non_offer+$old_stock_offer+$do_qty-$sec_qty);} //echo '<br>Nonoffer_qty= '.$stock_non_offer;
+
+$stock_qty  = $stock_qty+$do_qty-$sec_qty; //echo '<br>closing stock = '.$stock_qty;
+
+// comm amt calculation
+$nsp_per    = $item_nsp[$data2->item_id]/100;
+$tp    = $item_tp[$data2->item_id];
+
+if(($old_stock_offer+$do_qty)>$sec_qty){ 
+    $comm_amt=($sec_qty*$tp)*$nsp_per;
+}else{ 
+    $comm_amt=(($old_stock_offer+$do_qty)*$tp)*$nsp_per;
+} 
+//echo '<br>Comm amt = '.$comm_amt;
+
+
+
+$old_stock_offer='';
+$gstock_offer       +=$stock_offer;
+$gstock_non_offer   +=$stock_non_offer;
+$gstock_qty         +=$stock_qty;
+$gcomm_amt          +=$comm_amt;
+
+    
+} // end do item while
+
+// --- posting 
+$sql_new="insert into z_dealer_commission(dealer_code,item_id,stock_offer,stock_non_offer,stock_qty,comm_amt)
+values($data->dealer_code,$data->item_id,$stock_offer,$stock_non_offer,$stock_qty,$gcomm_amt)";
+db_query($sql_new);
+
+$gstock_offer=$gstock_non_offer=$gstock_qty=$gcomm_amt ='';
+} // end while
+
+     
+
+echo "<h2>Process Done</h2>";
+} // end process
+
+
+?>
+
+
+
+
+<div class="oe_view_manager oe_view_manager_current">
+<form action=""  method="post" enctype="multipart/form-data">
+
+
+<div class="oe_view_manager_body">
+<div  class="oe_view_manager_view_list"></div>
+<div class="oe_view_manager_view_form"><div style="opacity: 1;" class="oe_formview oe_view oe_form_editable">
+        <div class="oe_form_buttons"></div>
+        <div class="oe_form_sidebar"></div>
+        <div class="oe_form_pager"></div>
+        <div class="oe_form_container"><div class="oe_form">
+          <div class="">
+<div class="oe_form_sheetbg">
+        <div class="oe_form_sheet oe_form_sheet_width">
+          <div  class="oe_view_manager_view_list"><div  class="oe_list oe_view">
+            <table width="80%" border="1" align="center">
+              
+<tr>
+
+                <td height="40" colspan="6" bgcolor="#00FF00"><div align="center" class="style2">Upload Dealer Old Stock Information</div></td>
+                </tr>
+
+              <tr>
+                <td>Start Date </td>
+                <td width="18%"><input type="date" name="fdate" style="width:160px;" id="fdate" required="required" / ></td>
+              </tr>
+              <tr>
+                <td>End Date </td>
+                <td width="18%"><input type="date" name="tdate" style="width:160px;" id="tdate" required="required" / ></td>
+              </tr>
+              <tr>
+                <td>&nbsp;</td>
+                <td>&nbsp;</td>
+                <td>&nbsp;</td>
+              </tr> 
+              
+              <tr>
+                <td>Upload File</td>
+                <td colspan="1"><input name="upload_file"  type="file" id="upload_file" required="required"/></td>
+                
+                <td><input name="upload" type="submit" id="upload" value="Upload File" /></td>
+                <td>&nbsp;</td>
+              </tr>
+</form>
+              <tr>
+                <td>&nbsp;</td>
+                <td>&nbsp;</td>
+                <td>&nbsp;</td>
+              </tr>  
+              
+              
+              <tr>
+                <td height="40" colspan="3" bgcolor="#00FF00"><div align="center" class="style1">Dealer Commission Calculation System</div></td>
+                </tr>
+
+            <tr>
+                <td width="20%">&nbsp;</td>
+                <td width="30%">&nbsp;</td>
+            </tr>
+
+
+
+<form action=""  method="post" >
+<tr>
+<td> Process :</td>
+<td>&nbsp;</td>
+<td><input name="process" type="submit" id="process" value="Process File" /></td>
+</tr>
+              
+              
+<tr>
+<td>&nbsp;</td>
+</tr>
+
+              <tr>
+
+                <td colspan="3">
+
+                    <div align="center">
+                      <p>CSV File Example: </p>
+                      <table width="807" cellpadding="0" cellspacing="0">
+                                                <tr>
+                          <td width="30" height="19"><div align="left"><strong>SL</strong></div></td>
+                          <td width="137" align="right"><div align="left"><strong>Dealer Code</strong></div></td>
+                          <td width="218" align="right"><div align="left"><strong>Item ID </strong></div></td>
+                          <td width="131" align="right"><div align="left"><strong>OLD Stock </strong></div></td>
+                        </tr>
+						<tr>
+                          <td height="19"><div align="left">1</div></td>
+                          <td align="right"><div align="left">10003</div></td>
+                          <td align="right"><div align="left">100100524</div></td>
+                          <td align="right"><div align="left">400</div></td>
+                        </tr>
+						<tr>
+                          <td height="19"><div align="left">2</div></td>
+                          <td align="right"><div align="left">10003</div></td>
+                          <td align="right"><div align="left">100100525</div></td>
+                          <td align="right"><div align="left">350</div></td>
+                        </tr>                        
+                      </table>
+                    </div>
+
+</td>
+</tr>
+
+</table>
+<br/>
+</div>
+</div>
+
+</div>
+</div>
+    <div class="oe_chatter"><div class="oe_followers oe_form_invisible">
+      <div class="oe_follower_list"></div>
+    </div></div></div></div></div>
+    </div></div>
+</div>
+</form></div>
+
+
+
+
+<?
+require_once "../../../assets/template/layout.bottom.php";
+?>
